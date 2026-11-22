@@ -1,10 +1,6 @@
 # Google AI Trial Tool
 
-> Terjemahan Bahasa Indonesia dari README asli. Susunan bagian mengikuti README aslinya.
->
-> Catatan: Ini hanya terjemahan penjelasan untuk dibaca. File skrip asli tidak disertakan di repo ini, dan baris perintah persis dari aslinya tidak disalin di sini.
-
-Isi aslinya disebut sebagai repost, dari grup QQ 797481450.
+Isi ini adalah terjemahan, berasal dari grup QQ 797481450.
 Kali ini bisa membuat akun kena banned, karena melibatkan pemanggilan tool. Hati-hati dalam memakai.
 
 Melalui Frida yang disuntikkan ke proses Google One, tool ini memanggil API BillingClient untuk menemukan dan mengaktifkan trial gratis $0 yang tersembunyi.
@@ -13,91 +9,108 @@ Melalui Frida yang disuntikkan ke proses Google One, tool ini memanggil API Bill
 
 | Komponen | Penjelasan |
 | --- | --- |
-| Emulator MuMu | Sudah berjalan, sudah login akun Google, sudah terikat cara bayar |
-| adb | Sudah ada di PATH, atau diatur lewat variabel lingkungan |
-| frida (di komputer) | Sudah terpasang, versi 16 atau lebih baru |
-| frida-server (di perangkat) | Sudah dikirim ke perangkat dan sudah diberi izin eksekusi |
-| module.apk (di perangkat) | APK yang berisi library BillingClient, sudah dikirim ke perangkat |
-| Google One | Sudah terpasang di perangkat |
+| **Emulator MuMu** | Sudah berjalan, sudah login akun Google, sudah terikat cara bayar |
+| **adb** | Sudah ada di PATH, atau diatur lewat variabel lingkungan `ADB_PATH` |
+| **frida** (di komputer) | `pip install frida-tools`, versi 16 atau lebih baru |
+| **frida-server** (di perangkat) | Sudah dikirim ke perangkat `/data/local/tmp/frida-server` dan sudah diberi izin eksekusi |
+| **module.apk** (di perangkat) | APK yang berisi library BillingClient, sudah dikirim ke perangkat `/data/local/tmp/module.apk` |
+| **Google One** | Sudah terpasang di perangkat (`com.google.android.apps.subscriptions.red`) |
 
 ## Persiapan Perangkat
 
-Persiapan perangkat, secara garis besar:
+```
+# Hubungkan ke MuMu
+adb connect 127.0.0.1:16384
 
-1. Hubungkan ke emulator MuMu.
-2. Kirim file frida-server ke perangkat, lalu beri izin eksekusi.
-3. Kirim file module.apk ke perangkat.
+# Kirim frida-server (unduh yang sesuai arsitektur dari https://github.com/frida/frida/releases)
+adb push frida-server /data/local/tmp/frida-server
+adb shell "chmod 755 /data/local/tmp/frida-server"
 
-File frida-server diunduh dari halaman rilis Frida, pilih yang sesuai arsitektur perangkat.
+# Kirim module.apk (APK yang berisi com.android.billingclient)
+adb push module.apk /data/local/tmp/module.apk
+```
 
 ## Cara Pakai
 
-Cara pakai yang dijelaskan di README aslinya, dalam bentuk ringkasan:
+```
+# Tampilkan semua trial yang tersedia di akun saat ini
+./auto-trial.sh --list
 
-- Hanya melihat daftar semua trial yang tersedia di akun saat ini, tanpa mengaktifkan apa pun.
-- Mengaktifkan Pro (5TB, $19.99 per bulan) dengan trial gratis 3 bulan.
-- Mengaktifkan varian Pro (5TB, $19.99 per bulan) dengan trial gratis 12 bulan. Ini yang direkomendasikan, ditandai bintang di aslinya.
-- Mengaktifkan Ultra 20x (30TB, $199.99 per bulan) dengan trial gratis 12 bulan.
-- Mengaktifkan Ultra 5x (20TB, $99.99 per bulan) dengan trial gratis 6 bulan.
-- Otomatis memilih trial terpanjang (standarnya paket tertinggi), tanpa menyebut produk dan durasi secara spesifik.
-- Menentukan port ADB MuMu secara manual, lalu mengaktifkan Pro dengan trial 3 bulan.
+# Aktifkan Pro (5TB, $19.99/bulan) trial gratis 3 bulan
+./auto-trial.sh --product pro --dur 3mo
+
+# Aktifkan varian Pro (5TB, $19.99/bulan) trial gratis 12 bulan ★ Direkomendasikan
+./auto-trial.sh --product pro12 --dur 12mo
+
+# Aktifkan Ultra 20x (30TB, $199.99/bulan) trial gratis 12 bulan
+./auto-trial.sh --product 20x --dur 12mo
+
+# Aktifkan Ultra 5x (20TB, $99.99/bulan) trial gratis 6 bulan
+./auto-trial.sh --product 5x --dur 6mo
+
+# Otomatis memilih trial terpanjang (standarnya paket tertinggi)
+./auto-trial.sh
+
+# Tentukan port ADB MuMu
+./auto-trial.sh --port 16416 --product pro --dur 3mo
+```
 
 ### Parameter
 
 | Parameter | Penjelasan | Nilai bawaan |
 | --- | --- | --- |
-| Daftar saja | Hanya menampilkan trial, tidak mengaktifkan | Mode aktif |
-| Produk | Pilihan produk: Pro, Pro varian 12 bulan, Ultra 5x, Ultra 20x, otomatis, atau ID produk lengkap | Otomatis |
-| Durasi | Pilihan durasi trial: 1 bulan, 3 bulan, 6 bulan, 12 bulan, atau yang terpanjang | Yang terpanjang |
-| Port | Port ADB MuMu | Dipindai otomatis |
-| Jalur adb | Jalur ke program adb | Dideteksi otomatis |
+| `--list` | Hanya menampilkan trial, tidak mengaktifkan | (mode aktif) |
+| `--product` | `pro` / `pro12` / `5x` / `20x` / `auto` / ID lengkap `g1.*` | `auto` |
+| `--dur` | `1mo` / `3mo` / `6mo` / `12mo` / `longest` | `longest` |
+| `--port` | Port ADB MuMu | Dipindai otomatis |
+| `--adb` | Jalur adb | Dideteksi otomatis |
 
 ### Variabel Lingkungan
 
 | Variabel | Penjelasan |
 | --- | --- |
-| Jalur adb | Jalur ke program adb yang bisa dieksekusi |
-| Jalur skrip Frida | Jalur ke file skrip Frida, standarnya di folder yang sama |
-| Jalur frida-server di perangkat | Jalur frida-server di perangkat, standarnya di folder sementara perangkat |
-| Jalur module.apk di perangkat | Jalur module.apk di perangkat, standarnya di folder sementara perangkat |
+| `ADB_PATH` | Jalur ke program adb yang bisa dieksekusi |
+| `FRIDA_SCRIPT` | Jalur ke file frida-auto-trial.js (standarnya di folder yang sama) |
+| `FRIDA_SERVER_PATH` | Jalur frida-server di perangkat (standarnya `/data/local/tmp/frida-server`) |
+| `MODULE_APK_DEVICE` | Jalur module.apk di perangkat (standarnya `/data/local/tmp/module.apk`) |
 
 ## Perbandingan ID Produk
 
-| Alias | Kapasitas | Biaya bulanan | Trial |
-| --- | --- | --- | --- |
-| pro12 (direkomendasikan) | 5TB | $19.99 | 6 / 12 bulan |
-| pro | 5TB | $19.99 | 3 bulan |
-| 5x | 20TB | $99.99 | 1 / 3 / 6 / 12 bulan |
-| 20x | 30TB | $199.99 | 1 / 3 / 6 / 12 bulan |
-| — | 5TB | $19.99 | Tidak ada |
-| — | 30TB | $199.99 | Tidak ada |
-| — | 30TB | $149.99 | Tidak ada |
+| Alias | ID Produk | Kapasitas | Biaya bulanan | Trial |
+| --- | --- | --- | --- | --- |
+| **pro12** ★ | `g1.2tb.ai.subs_variant` | 5TB | $19.99 | 6/12 bulan |
+| **pro** | `g1.play.2tb.ai` | 5TB | $19.99 | 3 bulan |
+| **5x** | `g1.play.20tb` | 20TB | $99.99 | 1/3/6/12 bulan |
+| **20x** | `g1.play.ai.pro` | 30TB | $199.99 | 1/3/6/12 bulan |
+| — | `g1.2tb.ai` | 5TB | $19.99 | Tidak ada |
+| — | `g1.ai.pro` | 30TB | $199.99 | Tidak ada |
+| — | `g1.30tb` | 30TB | $149.99 | Tidak ada |
 
-Tombol "Upgrade" di dalam aplikasi memakai ID produk yang tidak membawa trial.
+Tombol "Upgrade" di dalam aplikasi memakai ID yang tidak membawa trial (`g1.2tb.ai` dan sejenisnya).
 
-> Catatan, per 19 November 2026, trial Ultra 5x / 20x sudah ditutup, penawarannya sudah dihapus. Untuk Pro ada dua ID produk:
+> **Catatan**: Per 2026-11-19, trial Ultra 5x/20x sudah ditutup (penawarannya sudah dihapus). Untuk Pro ada dua ID produk:
 >
-> - Varian Pro 12 bulan: trial paling lama 12 bulan gratis, direkomendasikan untuk dipakai lebih dulu
-> - Pro biasa: trial 3 bulan gratis
+> - `g1.2tb.ai.subs_variant` (alias `pro12`): trial paling lama **12 bulan** gratis, direkomendasikan untuk dipakai lebih dulu
+> - `g1.play.2tb.ai` (alias `pro`): trial 3 bulan gratis
 >
-> Catatan: Frida versi 17 ke atas ada perubahan besar, jembatan Java di versi 17 harus dimuat secara eksplisit. Disarankan memakai Frida 16.7.19.
+> Catatan: Frida versi 17 ke atas ada perubahan besar (jembatan Java di versi 17 harus dimuat secara eksplisit), disarankan memakai Frida **16.7.19**.
 
 ## Cara Murni Lewat Web — Tidak Bisa
 
-Menurut pengujian penulis, cara lewat web berikut tidak bisa melewati pemeriksaan server Google Play:
+Menurut pengujian, cara lewat web berikut tidak bisa melewati pemeriksaan server Google Play:
 
-1. **URL statis**: token, ID, dan data pembayaran terikat ke sesi, begitu kedaluwarsa langsung tidak berlaku.
-2. **Skrip console yang mengubah parameter ear**: halaman membuat ear sepanjang 25 karakter, satu bagian menyimpan produk dan bagian lain menyimpan tanda tangan integritas. Tanda tangan itu terikat ke produk aslinya, jadi setelah produk diganti, server membalas dengan kesalahan 400, baik tanda tangannya dipertahankan maupun dihapus.
-3. **Pengaya Chrome yang mencegat RPC**: cara komunitas di level payload RPC, tapi repo terkait sudah tidak ditemukan (404).
+1. **URL statis**: `rpctoken`, `_gfid`, dan blob pembayaran terikat ke sesi, begitu kedaluwarsa langsung tidak berlaku.
+2. **Skrip console yang mengubah parameter ear**: halaman membuat ear (25 karakter), di `ear[13]` menyimpan produk dan di `ear[24]` menyimpan tanda tangan integritas. Tanda tangan itu terikat ke produk aslinya, jadi setelah produk diganti, server membalas 400, baik tanda tangannya dipertahankan maupun dihapus.
+3. **Pengaya Chrome yang mencegat RPC**: cara komunitas di level payload RPC `Ngbm`, tapi repo terkait sudah tidak ditemukan (404).
 
-> Kesimpulan: trial tersembunyi tidak ditampilkan di halaman mana pun, dan web tidak bisa membuat sesi checkout yang sah untuk trial itu. Satu-satunya cara yang dianggap bisa oleh penulis adalah melalui Frida yang menyuntikkan API BillingClient di perangkat.
+> **Kesimpulan**: trial tersembunyi (`g1.play.2tb.ai`) tidak ditampilkan di halaman mana pun, dan web tidak bisa membuat sesi checkout yang sah untuk trial itu. Satu-satunya cara yang dianggap bisa adalah melalui Frida yang menyuntikkan API BillingClient di perangkat.
 
 ## Hal yang Perlu Diperhatikan
 
-- Skrip hanya memunculkan jendela pembayaran Google Play, tetap harus dikonfirmasi manual, termasuk memasukkan kata sandi.
+- Skrip hanya memunculkan jendela pembayaran Google Play, tetap harus dikonfirmasi manual (memasukkan kata sandi).
 - Setelah trial habis, langganan lanjut berbayar otomatis, ingat untuk membatalkan lebih dulu.
 - Akun harus sudah terikat cara bayar dan tidak punya langganan aktif, kalau tidak trial tidak tersedia.
-- Hasil pemanggilan alur penagihan yang berhasil bisa saja memakai kuota trial, walau jendelanya tidak sempat tampil.
+- Hasil `launchBillingFlow` dengan kode 0 bisa saja memakai kuota trial, walau jendelanya tidak sempat tampil.
 - Semua dilakukan di emulator, disarankan mengikat kartu dengan saldo kecil sebagai pengaman.
 
 ## Penjelasan File
